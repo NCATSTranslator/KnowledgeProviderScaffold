@@ -1,0 +1,245 @@
+{
+    "question_graph": {
+        "edges": [
+            {
+                "id": "e0",
+                "source_id": "n0",
+                "target_id": "n1"
+            }
+        ],
+        "nodes": [
+            {
+                "id": "n0",
+                "type": "gene"
+            },
+            {
+                "curie": [
+                    "MONDO:0019391"
+                ],
+                "id": "n1",
+                "name": "Fanconi anemia",
+                "type": "disease"
+            }
+        ]
+    }
+
+    "answers": [
+        {
+            "edge_bindings": {
+                "e0": [
+                    "fe16143b96ce92043e8423626643d26e",
+                    "bd8960a50992036535b3c70c4eb9fbe1"
+                ]
+            },
+            "node_bindings": {
+                "n0": [
+                    "HGNC:3582"
+                ],
+                "n1": [
+                    "MONDO:0019391"
+                ]
+            },
+            "score": 1.3143240340912739
+        },
+        {
+            "edge_bindings": {
+                "e0": [
+                    "43f72767a7b63321fd10839eaa093126",
+                    "a752140dcb927bbb7bf7da81e7767884"
+                ]
+            },
+            "node_bindings": {
+                "n0": [
+                    "HGNC:1101"
+                ],
+                "n1": [
+                    "MONDO:0019391"
+                ]
+            },
+            "score": 1.2910750475853388
+        }
+    ],
+    "knowledge_graph": {
+        "edges": [
+            {
+                "ctime": [
+                    1563822217.9005182,
+                    1563911195.70571
+                ],
+                "edge_source": [
+                    "pharos.gene_get_disease",
+                    "pharos.disease_get_gene"
+                ],
+                "id": "bd8960a50992036535b3c70c4eb9fbe1",
+                "predicate_id": "NCIT:R176",
+                "relation": [
+                    "PHAROS:gene_involved",
+                    "PHAROS:gene_involved"
+                ],
+                "relation_label": [
+                    "gene_involved",
+                    "gene_involved"
+                ],
+                "source_database": [
+                    "pharos",
+                    "pharos"
+                ],
+                "source_id": "MONDO:0019391",
+                "target_id": "HGNC:3582",
+                "type": "disease_to_gene_association",
+                "weight": 1
+            },
+            {
+                "ctime": [
+                    1563822226.6951346,
+                    1563911364.7945392
+                ],
+                "edge_source": [
+                    "biolink.gene_get_disease",
+                    "biolink.disease_get_gene"
+                ],
+                "id": "fe16143b96ce92043e8423626643d26e",
+                "predicate_id": "RO:0002410",
+                "relation": [
+                    "RO:0003303",
+                    "RO:0003303"
+                ],
+                "relation_label": [
+                    "causes condition",
+                    "causes condition"
+                ],
+                "source_database": [
+                    "biolink",
+                    "biolink"
+                ],
+                "source_id": "HGNC:3582",
+                "target_id": "MONDO:0019391",
+                "type": "causes"
+            },
+            {
+                "ctime": [
+                    1563827294.9915626,
+                    1563911195.7028797
+                ],
+                "edge_source": [
+                    "pharos.gene_get_disease",
+                    "pharos.disease_get_gene"
+                ],
+                "id": "a752140dcb927bbb7bf7da81e7767884",
+                "predicate_id": "NCIT:R176",
+                "relation": [
+                    "PHAROS:gene_involved",
+                    "PHAROS:gene_involved"
+                ],
+                "relation_label": [
+                    "gene_involved",
+                    "gene_involved"
+                ],
+                "source_database": [
+                    "pharos",
+                    "pharos"
+                ],
+                "source_id": "MONDO:0019391",
+                "target_id": "HGNC:1101",
+                "type": "disease_to_gene_association"
+            },
+            {
+                "ctime": [
+                    1563827310.946571,
+                    1563911364.7937117
+                ],
+                "edge_source": [
+                    "biolink.gene_get_disease",
+                    "biolink.disease_get_gene"
+                ],
+                "id": "43f72767a7b63321fd10839eaa093126",
+                "predicate_id": "RO:0002410",
+                "relation": [
+                    "RO:0003303",
+                    "RO:0003303"
+                ],
+                "relation_label": [
+                    "causes condition",
+                    "causes condition"
+                ],
+                "source_database": [
+                    "biolink",
+                    "biolink"
+                ],
+                "source_id": "HGNC:1101",
+                "target_id": "MONDO:0019391",
+                "type": "causes"
+            }
+        ],
+        "nodes": [
+            {
+                "description": "BRCA2 DNA repair associated [Source:HGNC Symbol;Acc:HGNC:1101]",
+                "equivalent_identifiers": [
+                    "UniProtKB:P51587",
+                    "UniProtKB:H0YD86",
+                    "UniProtKB:H0YE37",
+                    "HGNC.SYMBOL:BRCA2",
+                    "NCBIGENE:675",
+                    "HGNC:1101",
+                    "ENSEMBL:ENSG00000139618"
+                ],
+                "id": "HGNC:1101",
+                "name": "BRCA2",
+                "type": [
+                    "gene"
+                ]
+            },
+            {
+                "description": "FA complementation group A [Source:HGNC Symbol;Acc:HGNC:3582]",
+                "equivalent_identifiers": [
+                    "UniProtKB:Q0VAP4",
+                    "UniProtKB:H3BS03",
+                    "HGNC:3582",
+                    "UniProtKB:H3BSA3",
+                    "UniProtKB:H3BT32",
+                    "ENSEMBL:ENSG00000187741",
+                    "UniProtKB:H3BQX1",
+                    "UniProtKB:H3BQU6",
+                    "ENSEMBL:ENSG00000187741",
+                    "UniProtKB:H3BT40",
+                    "UniProtKB:H3BQU1",
+                    "UniProtKB:F5H8D5",
+                    "UniProtKB:H3BRX3",
+                    "NCBIGENE:2175",
+                    "UniProtKB:H3BQW7",
+                    "UniProtKB:O15360",
+                    "UniProtKB:H3BM41",
+                    "UniProtKB:H3BNS0",
+                    "UniProtKB:H3BT53",
+                    "UniProtKB:H3BSI9",
+                    "UniProtKB:H3BSL6",
+                    "UniProtKB:H3BV66",
+                    "UniProtKB:H3BS84",
+                    "UniProtKB:H3BUI1"
+                ],
+                "id": "HGNC:3582",
+                "name": "FANCA",
+                "type": [
+                    "gene"
+                ]
+            },
+            {
+                "equivalent_identifiers": [
+                    "DOID:13636",
+                    "MEDDRA:10055206",
+                    "MESH:D005199",
+                    "ORPHANET:84",
+                    "UMLS:C0015625",
+                    "MEDDRA:10016218",
+                    "MONDO:0019391"
+                ],
+                "id": "MONDO:0019391",
+                "name": "Fanconi anemia",
+                "type": [
+                    "genetic_condition",
+                    "disease"
+                ]
+            }
+        ]
+    }
+}
