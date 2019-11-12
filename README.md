@@ -1,5 +1,6 @@
 # KnowledgeProviderScaffold
 Example Responses and Documentation for Knowledge Providers
+
 This repository provides a small example of the type of response expected from a Translator Knowledge Provider.
 In this example, there is a query graph which poses the "question" of what genes are connected to the disease
 Fanconi Anemia (as identified by the CURIE MONDO:0019391), as well as the Knowledge Graph answer which gives 
