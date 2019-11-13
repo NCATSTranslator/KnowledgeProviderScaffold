@@ -11,6 +11,7 @@ https://github.com/NCATS-Tangerine/NCATS-ReasonerStdAPI/blob/master/API/Translat
 
 A tool for validating a response from a Knowledge Provider can be found here:
 http://transltr.io:7071/apidocs/#/default/post_validate_message
+
 and tools for validating other elements or sub-elements of the ReasonerStdAPI can also be found here:
 http://transltr.io:7071/apidocs/
 
