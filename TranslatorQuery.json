@@ -1,0 +1,16 @@
+{
+    "edges" : [
+	{
+	    "id":"e00",
+	    "source_id":"https://omim.org/entry/60393",
+	    "target_id":"https://www.uniprot.org/uniprot/P00738"
+	}
+
+    ],
+    "nodes":[
+	{
+	    "curie":"OMIM:60903",
+	    "id":"n00"
+	}
+    ]
+}
