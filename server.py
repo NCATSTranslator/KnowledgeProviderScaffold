@@ -19,7 +19,6 @@ class Query(Resource):
              if(status_code==200):
                  response = requests.get(scaffoldUrl)
                  result=response.text
-                 print("yo")
              else:
                  result = {'data':'bad'}
                  print(str(status_code))
