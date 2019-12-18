@@ -4,6 +4,7 @@ from json import dumps
 from flask import jsonify
 from contextlib import closing
 import requests
+import time
 
 app = Flask(__name__)
 api = Api(app)
@@ -24,12 +25,96 @@ class Query(Resource):
                  print(str(status_code))
 
              return jsonify(result)
+class Relations(Resource):
+
+        def processRelations(self, relations,sourceId):
+            biolinkMap ={
+                "associated_with":"related_to",
+                "clinically_associated_with":"correlated_with",
+                "co-occurs_with":"correlated_with",
+                "has_manifestation":"causes",
+                "may_treat":"treats", #perhaps this is a bit of an overstatement
+                "related_to":"related_to",
+                "has_sign_or_symptom":"causes"}
+            edges = []
+            nodes = []
+            for relation in relations:
+                #only dealing with named predicates at this time
+                if 'attr' in relation:
+                    #further, only dealing with specifically mapped predicates
+                    if relation['attr'] in biolinkMap:
+                        rui = relation['rui']
+                        cui = relation['cui']
+                        relType = relation['type']
+                        attr = relation['attr']
+                        source = relation['source']
+            
+                        nodeJson = self.retrieveConceptFromCui(relation['cui'])
+                        
+                        edge = {}
+                        edge['ctime']=[time.time()]
+                        edge['edge_source']=["UMLS.get_relations"]
+                        edge['id']=rui
+                        edge['relation']=[source+":"+attr]
+                        edge['relation_label']=[attr]
+                        edge['source_id']=sourceId
+                        edge['target_id']="UMLS:"+cui
+                        edge['type']=biolinkMap[attr]
+                        edge['weight']="1"
+                        print(edge)
+                        edges.append(edge)
+
+                        node ={}
+                        node['description']=nodeJson['definitions']
+                        node['id']="UMLS:"+nodeJson['cui']
+                        node['name']=nodeJson['name']
+                        #mapping needs to be done from Semantic Types Ontology to Biolink.  For now, let's just cheat
+                        node['type']=["named_thing"]
+                        print(node)
+                        nodes.append(node)
+            
+            
+
+        def retrieveConceptFromCui(self,cui):
+            url = 'https://blackboard.ncats.io/ks/umls/api/concepts/cui/'+cui
+            with closing(requests.get(url,stream=False)) as response:
+                response = requests.get(url)
+                jsonResult = response.json()
+                return jsonResult
+                    
 
 
+        def post(self):
+            question_graph = request.get_json(force = True)
+            nodeList = question_graph['nodes']
+            curieToIdMap={}
+            for node in nodeList:
+                if('curie' in node):
+                    curie=node['curie']
+                    splitCurie = curie.split(':')
+                    if(splitCurie[0]=='MSH'):
+                        print("good")
+                        url = 'https://blackboard.ncats.io/ks/umls/api/concepts/scui/'+splitCurie[1]
+                        print(url)
+                        with closing(requests.get(url,stream=False)) as response:
+                            response = requests.get(url)
+                            result = response.text
+                            jsonResult=response.json()
+                            if('relations' in jsonResult):
+                                relations = jsonResult['relations']
+                                self.processRelations(relations,curie)
+                            else:
+                                print(curie+" returned no relations!")
+                    else:
+                            print("Nodes must be identified with a MeSH CURIE")
+                            curieToIdMap[node['id']] = curie
+                #return result
+                
 api.add_resource(Query,'/query')
-
+api.add_resource(Relations,'/relations')
 if __name__=='__main__':
     app.run(
+        host='0.0.0.0',
         port='7072',
         debug=True
     )
