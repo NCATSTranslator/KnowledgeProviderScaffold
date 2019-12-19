@@ -1,7 +1,4 @@
 # KnowledgeProviderScaffold
-
-[![Join the chat at https://gitter.im/KnowledgeProviderScaffold/community](https://badges.gitter.im/KnowledgeProviderScaffold/community.svg)](https://gitter.im/KnowledgeProviderScaffold/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-
 Example Responses and Documentation for Knowledge Providers
 
 This repository provides a small example of the type of response expected from a Translator Knowledge Provider.
