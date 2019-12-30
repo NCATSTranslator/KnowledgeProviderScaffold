@@ -21,12 +21,13 @@ class Query(Resource):
                  result=response.text
              else:
                  result = {'data':'bad'}
+                 print(response.text)
                  print(str(status_code))
 
              return jsonify(result)
 class Relations(Resource):
 
-        def processRelations(self, relations,sourceId):
+        def processRelations(self, relations,sourceId,message):
             biolinkMap ={
                 "associated_with":"related_to",
                 "clinically_associated_with":"correlated_with",
@@ -60,7 +61,7 @@ class Relations(Resource):
                         edge['target_id']="UMLS:"+cui
                         edge['type']=biolinkMap[attr]
                         edge['weight']="1"
-                        print(edge)
+                        #print(edge)
                         edges.append(edge)
 
                         node ={}
@@ -69,11 +70,30 @@ class Relations(Resource):
                         node['name']=nodeJson['name']
                         #mapping needs to be done from Semantic Types Ontology to Biolink.  For now, let's just cheat
                         node['type']=["named_thing"]
-                        print(node)
+                        #print(node)
                         nodes.append(node)
-            
+            knowledge_graph={'edges':edges,'nodes':nodes}
+            answers = self.generateAnswers(knowledge_graph)
+            message['answers']=answers
+            message['knowledge_graph']=knowledge_graph    
+            #print ("nodes "+str(len(nodes))+"\nedges "+str(len(edges))+"\n")
+            return message
             
 
+        def generateAnswers(self,knowledge_graph):
+            answers = []
+            for edge in knowledge_graph['edges']:
+                edge_bindings={'e0':[edge['id']]}
+                node_bindings={'n0':[edge['source_id']],
+                               'n1':[edge['target_id']]
+                }
+                answer = {'edge_bindings':edge_bindings,
+                          'node_bindings':node_bindings,
+                          'score':"1"
+                          }
+                answers.append(answer)
+            return answers
+            
         def retrieveConceptFromCui(self,cui):
             url = 'https://blackboard.ncats.io/ks/umls/api/concepts/cui/'+cui
             with closing(requests.get(url,stream=False)) as response:
@@ -87,6 +107,7 @@ class Relations(Resource):
             question_graph = request.get_json(force = True)
             nodeList = question_graph['nodes']
             curieToIdMap={}
+            message = {'question_graph':question_graph}
             for node in nodeList:
                 if('curie' in node):
                     curie=node['curie']
@@ -101,13 +122,13 @@ class Relations(Resource):
                             jsonResult=response.json()
                             if('relations' in jsonResult):
                                 relations = jsonResult['relations']
-                                self.processRelations(relations,curie)
+                                message = self.processRelations(relations,curie,message)
                             else:
                                 print(curie+" returned no relations!")
                     else:
                             print("Nodes must be identified with a MeSH CURIE")
                             curieToIdMap[node['id']] = curie
-                #return result
+            return message
                 
 api.add_resource(Query,'/query')
 api.add_resource(Relations,'/relations')
