@@ -1,0 +1,19 @@
+{
+    "edges" : [
+	{
+	    "id":"e00",
+	    "source_id":"n00",
+	    "target_id":"n01"
+	}
+
+    ],
+    "nodes":[
+	{
+	    "curie":"MSH:M0001119",
+	    "id":"n00"
+	},
+	{
+	    "id":"n01"
+	}
+    ]
+}
