@@ -9,7 +9,49 @@ import time
 app = Flask(__name__)
 api = Api(app)
 
+
+class Graph():
+    def __init__(self,tgraph):
+        graph={}
+        nodeList=tgraph['nodes']
+        edgeList = tgraph['edges']
+        for edge in edgeList:
+            source = edge['source_id']
+            target = edge['target_id']
+            sourceNode = self.getNodeById(nodeList,source)
+            targetNode = self.getNodeById(nodeList,target)
+            if(source in graph):
+                connectedNodes = graph[source]
+                connectedNodes.append(targetNode)
+                graph.update({source:connectedNodes})
+            else:
+                connectedNodes=[targetNode]
+                graph.update({sourceNode:connectedNodes})
+        self._graph_ = graph
+
+    def getNodeById(self,nodeList,id):
+        for node in nodeList:
+            if(node['id']==id):
+                return node
+        print("FAILED TO FIND NODE WITH ID "+id)
+        return 1
+
 class Query(Resource):
+    def ngram(self, query):
+        graph = Graph(query)
+
+
+        return 0
+    def post(self):
+        query = request.get_json(force = True)
+        nodeList = query['nodes']
+        nodeCount = len(nodeList)
+        if(nodeCount==3):
+            self.ngram(query)
+        return 0
+
+
+class ValidateQuery(Resource):
     def post(self):
          url = 'http://transltr.io:7071/validate_querygraph'
          scaffoldUrl='https://raw.githubusercontent.com/NCATSTranslator/KnowledgeProviderScaffold/master/TranslatorKnowledgeProviderResponseScaffold.json'
@@ -130,8 +172,9 @@ class Relations(Resource):
                             curieToIdMap[node['id']] = curie
             return message
                 
-api.add_resource(Query,'/query')
+api.add_resource(ValidateQuery,'/validate_query')
 api.add_resource(Relations,'/relations')
+api.add_resource(Query,'/query')
 if __name__=='__main__':
     app.run(
         host='0.0.0.0',
