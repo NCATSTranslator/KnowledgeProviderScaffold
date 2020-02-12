@@ -1,8 +1,9 @@
 from flask import Flask, request
 from flask_restful import Resource, Api
-from json import dumps
+import json
 from flask import jsonify
 from contextlib import closing
+import urllib.parse
 import requests
 import time
 
@@ -23,10 +24,12 @@ class Graph():
             if(source in graph):
                 connectedNodes = graph[source]
                 connectedNodes.append(targetNode)
-                graph.update({source:connectedNodes})
+                #graph.update({source:connectedNodes})
+                graph['sourceNode']=connectedNodes
             else:
                 connectedNodes=[targetNode]
-                graph.update({sourceNode:connectedNodes})
+                #graph.update({sourceNode:connectedNodes})
+                graph['sourceNode']=connectedNodes
         self._graph_ = graph
 
     def getNodeById(self,nodeList,id):
@@ -34,21 +37,132 @@ class Graph():
             if(node['id']==id):
                 return node
         print("FAILED TO FIND NODE WITH ID "+id)
-        return 1
+        return None
 
 class Query(Resource):
     def ngram(self, query):
-        graph = Graph(query)
+        ngramUrl = 'https://knowledge.ncats.io/pubmed/api/ngramstest?'
+        getCurieUrl = 'https://robokop.renci.org/api/search/'
+        getNameUrl = 'https://robokop.renci.org/builder/api/synonymize/'
+        #graph = Graph(query)
+        outterNodes = []
+        for node in query['nodes']:
+            if 'name' in node:
+                outterNodes.append(node)
+        params = {
+            "size" : "500",
+            "q1" : outterNodes[0]['name'],
+            "q2" :outterNodes[1]['name'],
+            "mincount":"10"
+        }
+        url = self.encode(ngramUrl,params)
+        print ("URL: "+url)
+        with closing(requests.get(url, stream=False)) as response:
+           results = response.text
+        jsonResults =  json.loads(results)
+        connectedNodes = []
+        for result in jsonResults:
+            label = result['label']
+            with closing(requests.post(getCurieUrl,data=label)) as response:
+                results = json.loads(response.text)
+                try:
+                    connectedNodes.append(results[0])
+                except:
+                    #some of these terms won't come back with an identifier.  We can just throw those out.
+                    continue
 
 
-        return 0
+        #only doing the bare minimum for the edges for now: source, target, and id.  The id is unique for now
+        #but will need reworking in an instance that could produce multiple edges between a pair of nodes
+        #TODO somehow parse the original query graph to get the node and edge bindings right?
+        edges=[]
+        results = []
+        for node in connectedNodes:
+            #changing name of field curie to id to match standards
+            node['id'] = node.pop('curie')
+            edgeBindings=[]
+            nodeBindings = []
+            inEdge = {
+                "source_id":node['id'],
+                "target_id":outterNodes[1]['curie'],
+                "id":node['id']+"to"+outterNodes[1]['curie']
+            }
+            outEdge = {
+                "source_id":outterNodes[0]['curie'],
+                "target_id":node['id'],
+                "id":outterNodes[0]['curie']+"to"+node['id']
+            }
+            for qnode in query['nodes']:
+                if 'curie' in qnode:
+                    nodeBindings.append(
+                        {
+                            "kg_id":qnode['curie'],
+                            "qg_id":qnode['id']
+                        }
+                    )
+                else:
+                    nodeBindings.append(
+                        {
+                            "kg_id":node['id'],
+                            "qg_id":qnode['id']
+                        }
+                    )
+            #This is really terrible, and I want to find a better way to do it.
+            for qedge in query['edges']:
+                if outterNodes[1]['id'] in qedge.values():
+                    edgeBindings.append(
+                        {
+                            "kg_id":inEdge['id'],
+                            "qg_id":qedge['id']
+                        }
+                    )
+                elif outterNodes[0]['id'] in qedge.values():
+                    edgeBindings.append(
+                        {
+                            "kg_id":outEdge['id'],
+                            "qg_id":qedge['id']
+                        }
+                    )
+            results.append(
+                {
+                    "edge_bindings":edgeBindings,
+                    "node_bindings":nodeBindings
+                }
+            )
+            edges.append(inEdge)
+            edges.append(outEdge)
+        #adding our original nodes to the node list
+        for node in outterNodes:
+            node['id']=node['curie']
+            del node['curie']
+        connectedNodes.append(outterNodes)
+
+        result={
+            "query_graph":query,
+            "results":results,
+            "edges":edges,
+            "nodes":connectedNodes
+        }
+        return result
+    #the standard urllib encode options don't suit what the ngram endpoint needs.  So, we need to use this homebrewed one
+    def encode(self,url,params):
+        for k,v in params.items():
+            if k in('q1','q2'):
+                v="\""+v+"\""
+                if " " in v:
+                    v=v.replace(" ","%20")+"~2"
+            url = url+k+"="+v+"&"
+        return url
     def post(self):
         query = request.get_json(force = True)
         nodeList = query['nodes']
         nodeCount = len(nodeList)
         if(nodeCount==3):
-            self.ngram(query)
-        return 0
+            #print(self.ngram(query))
+            result = self.ngram(query)
+            print(result)
+
+        return result
 
 
 class ValidateQuery(Resource):
