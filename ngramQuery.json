@@ -1,0 +1,29 @@
+{
+    "edges" : [
+	{
+	    "id":"e00",
+	    "source_id":"n00",
+	    "target_id":"n01"
+	},
+	{
+		"id":"e01",
+		"source_id":"n01",
+		"target_id":"n02"
+	}
+    ],
+    "nodes":[
+	{
+		"curie":"GO:0042273",
+		"name":"ribosomal biogenesis",
+	    	"id":"n00"
+	},
+	{
+	    "id":"n01"
+	},
+	{
+		"curie":"HGNC:3192",
+		"name":"EEF1A2",
+		"id":"n02"
+	}
+    ]
+}

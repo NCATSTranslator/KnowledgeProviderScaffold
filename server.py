@@ -134,14 +134,18 @@ class Query(Resource):
         #adding our original nodes to the node list
         for node in outterNodes:
             node['id']=node['curie']
+            node['type']=['named_thing']
             del node['curie']
-        connectedNodes.append(outterNodes)
+            connectedNodes.append(node)
 
         result={
             "query_graph":query,
             "results":results,
-            "edges":edges,
-            "nodes":connectedNodes
+            "knowledge_graph":{
+                "edges":edges,
+                "nodes":connectedNodes
+            }
+
         }
         return result
     #the standard urllib encode options don't suit what the ngram endpoint needs.  So, we need to use this homebrewed one
