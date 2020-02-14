@@ -11,40 +11,12 @@ app = Flask(__name__)
 api = Api(app)
 
 
-class Graph():
-    def __init__(self,tgraph):
-        graph={}
-        nodeList=tgraph['nodes']
-        edgeList = tgraph['edges']
-        for edge in edgeList:
-            source = edge['source_id']
-            target = edge['target_id']
-            sourceNode = self.getNodeById(nodeList,source)
-            targetNode = self.getNodeById(nodeList,target)
-            if(source in graph):
-                connectedNodes = graph[source]
-                connectedNodes.append(targetNode)
-                #graph.update({source:connectedNodes})
-                graph['sourceNode']=connectedNodes
-            else:
-                connectedNodes=[targetNode]
-                #graph.update({sourceNode:connectedNodes})
-                graph['sourceNode']=connectedNodes
-        self._graph_ = graph
-
-    def getNodeById(self,nodeList,id):
-        for node in nodeList:
-            if(node['id']==id):
-                return node
-        print("FAILED TO FIND NODE WITH ID "+id)
-        return None
 
 class Query(Resource):
     def ngram(self, query):
         ngramUrl = 'https://knowledge.ncats.io/pubmed/api/ngramstest?'
         getCurieUrl = 'https://robokop.renci.org/api/search/'
         getNameUrl = 'https://robokop.renci.org/builder/api/synonymize/'
-        #graph = Graph(query)
         outterNodes = []
         for node in query['nodes']:
             if 'name' in node:
@@ -74,7 +46,6 @@ class Query(Resource):
 
         #only doing the bare minimum for the edges for now: source, target, and id.  The id is unique for now
         #but will need reworking in an instance that could produce multiple edges between a pair of nodes
-        #TODO somehow parse the original query graph to get the node and edge bindings right?
         edges=[]
         results = []
         for node in connectedNodes:
@@ -148,6 +119,29 @@ class Query(Resource):
 
         }
         return result
+
+
+    def getSearchTerm(self, query):
+        for node in query['nodes']:
+            if 'name' in node:
+                return node['name']
+        #TODO implement proper error handling here
+        exit(1)
+
+    def oneHop(self, query):
+        url = 'https://knowledge.ncats.io/ks/umls/concepts/'
+        searchTerm = self.getSearchTerm(query)
+        with closing(requests.get(url+searchTerm)) as response:
+            result = response.text
+        jsonResult = json.loads(result)[0]
+        #just taking the first one for now.  I suppose it is scored...
+        cui = jsonResult['cui']
+        relations = jsonResult['concept']['relations']
+        message ={"query_graph":query}
+        message = Relations.processRelations(Relations, relations,cui,message)
+        return message
+
+
     #the standard urllib encode options don't suit what the ngram endpoint needs.  So, we need to use this homebrewed one
     def encode(self,url,params):
         for k,v in params.items():
@@ -157,15 +151,16 @@ class Query(Resource):
                     v=v.replace(" ","%20")+"~2"
             url = url+k+"="+v+"&"
         return url
+
     def post(self):
         query = request.get_json(force = True)
         nodeList = query['nodes']
         nodeCount = len(nodeList)
+        #TODO do this in a more robust (read: less terrible) way
         if(nodeCount==3):
-            #print(self.ngram(query))
             result = self.ngram(query)
-            print(result)
-
+        elif(nodeCount==2):
+            result = self.oneHop(query)
         return result
 
 
@@ -199,65 +194,78 @@ class Relations(Resource):
             edges = []
             nodes = []
             for relation in relations:
-                #only dealing with named predicates at this time
-                if 'attr' in relation:
-                    #further, only dealing with specifically mapped predicates
-                    if relation['attr'] in biolinkMap:
-                        rui = relation['rui']
-                        cui = relation['cui']
-                        relType = relation['type']
-                        attr = relation['attr']
-                        source = relation['source']
-            
-                        nodeJson = self.retrieveConceptFromCui(relation['cui'])
-                        
-                        edge = {}
-                        edge['ctime']=[time.time()]
-                        edge['edge_source']=["UMLS.get_relations"]
-                        edge['id']=rui
-                        edge['relation']=[source+":"+attr]
-                        edge['relation_label']=[attr]
-                        edge['source_id']=sourceId
-                        edge['target_id']="UMLS:"+cui
-                        edge['type']=biolinkMap[attr]
-                        edge['weight']="1"
-                        #print(edge)
-                        edges.append(edge)
+                cui = relation['cui']
 
-                        node ={}
-                        node['description']=nodeJson['definitions']
-                        node['id']="UMLS:"+nodeJson['cui']
-                        node['name']=nodeJson['name']
-                        #mapping needs to be done from Semantic Types Ontology to Biolink.  For now, let's just cheat
-                        node['type']=["named_thing"]
-                        #print(node)
-                        nodes.append(node)
+
+                nodeJson = self.retrieveConceptFromCui(self,cui)
+                #this is currently mostly a dummy funcition until we have UMLS to Biolink predicate mapping
+                edgeJson = self.retrieveRelationshipFromRui(self,relation)
+                edgeJson['source_id']=sourceId
+                edges.append(edgeJson)
+
+                node ={}
+                if 'definitions' in nodeJson:
+                    node['description']=nodeJson['definitions']
+                node['id']="UMLS:"+nodeJson['cui']
+                node['name']=nodeJson['name']
+                #mapping needs to be done from Semantic Types Ontology to Biolink.  For now, let's just cheat
+                node['type']=["named_thing"]
+                #print(node)
+                nodes.append(node)
             knowledge_graph={'edges':edges,'nodes':nodes}
-            answers = self.generateAnswers(knowledge_graph)
-            message['answers']=answers
+            answers = self.generateResults(self,knowledge_graph)
+            message['results']=answers
             message['knowledge_graph']=knowledge_graph    
             #print ("nodes "+str(len(nodes))+"\nedges "+str(len(edges))+"\n")
             return message
             
-
-        def generateAnswers(self,knowledge_graph):
-            answers = []
+        #TODO refactor this to actually use the user-provided query graph
+        def generateResults(self,knowledge_graph):
+            results = []
             for edge in knowledge_graph['edges']:
-                edge_bindings={'e0':[edge['id']]}
-                node_bindings={'n0':[edge['source_id']],
-                               'n1':[edge['target_id']]
-                }
-                answer = {'edge_bindings':edge_bindings,
+                edge_bindings=[{'kg_id':edge['id'],
+                               'qg_id':"e00"
+                               }]
+                node_bindings=[
+                    {
+                     'kg_id':edge['source_id'],
+                     'qg_id':"n0"
+                    },
+                    {
+                        'kg_id':edge['target_id'],
+                        'qg_id':"n1"
+                    }
+                ]
+                result = {'edge_bindings':edge_bindings,
                           'node_bindings':node_bindings,
                           'score':"1"
                           }
-                answers.append(answer)
-            return answers
-            
+                results.append(result)
+            return results
+
+        def retrieveRelationshipFromRui(self, relation):
+            rui = relation['rui']
+            relType = relation['type']
+            #attr = relation['attr']
+            source = relation['source']
+
+            edge = {}
+            edge['ctime']=[time.time()]
+            edge['edge_source']=["UMLS.get_relations"]
+            edge['id']=source+":"+rui
+            edge['relation']=[source+":"+rui]
+            if 'attr' in relation:
+                edge['relation_label']=[relation['attr']]
+            #edge['source_id']=sourceId
+            edge['target_id']="UMLS:"+relation['cui']
+            #this is where we're "cheating" and will need to get a mapping to Biolink
+            edge['type']="related_to"
+            edge['weight']="1"
+            return edge
+
         def retrieveConceptFromCui(self,cui):
             url = 'https://blackboard.ncats.io/ks/umls/api/concepts/cui/'+cui
             with closing(requests.get(url,stream=False)) as response:
-                response = requests.get(url)
                 jsonResult = response.json()
                 return jsonResult
                     

@@ -10,7 +10,8 @@
     "nodes":[
 	{
 	    "curie":"MSH:M0001119",
-	    "id":"n00"
+	    "id":"n00",
+	    "name":"anemia"
 	},
 	{
 	    "id":"n01"
