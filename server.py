@@ -30,12 +30,14 @@ class Query(Resource):
         url = self.encode(ngramUrl,params)
         print ("URL: "+url)
         with closing(requests.get(url, stream=False)) as response:
+           response.encoding='utf-8'
            results = response.text
         jsonResults =  json.loads(results)
         connectedNodes = []
         for result in jsonResults:
             label = result['label']
-            with closing(requests.post(getCurieUrl,data=label)) as response:
+            with closing(requests.post(getCurieUrl,data=label.encode('utf-8'))) as response:
+                response.encoding='utf-8'
                 results = json.loads(response.text)
                 try:
                     connectedNodes.append(results[0])
@@ -132,6 +134,7 @@ class Query(Resource):
         url = 'https://knowledge.ncats.io/ks/umls/concepts/'
         searchTerm = self.getSearchTerm(query)
         with closing(requests.get(url+searchTerm)) as response:
+            response.encoding='utf-8'
             result = response.text
         jsonResult = json.loads(result)[0]
         #just taking the first one for now.  I suppose it is scored...
@@ -266,6 +269,7 @@ class Relations(Resource):
         def retrieveConceptFromCui(self,cui):
             url = 'https://blackboard.ncats.io/ks/umls/api/concepts/cui/'+cui
             with closing(requests.get(url,stream=False)) as response:
+                response.encoding='utf-8'
                 jsonResult = response.json()
                 return jsonResult
                     
@@ -285,8 +289,7 @@ class Relations(Resource):
                         url = 'https://blackboard.ncats.io/ks/umls/api/concepts/scui/'+splitCurie[1]
                         print(url)
                         with closing(requests.get(url,stream=False)) as response:
-                            response = requests.get(url)
-                            result = response.text
+                            response.encoding='utf-8'
                             jsonResult=response.json()
                             if('relations' in jsonResult):
                                 relations = jsonResult['relations']
