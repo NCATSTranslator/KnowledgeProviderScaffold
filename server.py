@@ -1,7 +1,6 @@
-from flask import Flask, request
+from flask import Flask, request,jsonify
 from flask_restful import Resource, Api
 import json
-from flask import jsonify
 from contextlib import closing
 import urllib.parse
 import requests
@@ -20,7 +19,8 @@ class Query(Resource):
         outterNodes = []
         for node in query['nodes']:
             if 'name' in node:
-                outterNodes.append(node)
+                #need to copy here to preserve query graph
+                outterNodes.append(node.copy())
         params = {
             "size" : "500",
             "q1" : outterNodes[0]['name'],
@@ -105,11 +105,11 @@ class Query(Resource):
             edges.append(inEdge)
             edges.append(outEdge)
         #adding our original nodes to the node list
-        for node in outterNodes:
-            node['id']=node['curie']
+        for n in outterNodes:
+            n['id']=n['curie']
             node['type']=['named_thing']
-            del node['curie']
-            connectedNodes.append(node)
+            del n['curie']
+            connectedNodes.append(n)
 
         result={
             "query_graph":query,
