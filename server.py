@@ -196,28 +196,75 @@ class Relations(Resource):
                 "has_sign_or_symptom":"causes"}
             edges = []
             nodes = []
+            results = []
+            LIMIT = 50
+            count = 0
+            #TODO improve this; I'm making a lot of assumptions here and not validating
+            query=message['query_graph']
+            qnodes=query['nodes']
+            qedges=query['edges']
+            lockedNode={}
+            freeNodeId=""
+            qEdgeId=""
+            qEdgeId=qedges[0]['id']
+            for qnode in qnodes:
+                if 'curie' in qnode:
+                    lockedNode=qnode
+                else:
+                    freeNodeId=qnode['id']
             for relation in relations:
+                count +=1
+                if(count>LIMIT):
+                    break
+                nodeBindings=[]
                 cui = relation['cui']
-
-
                 nodeJson = self.retrieveConceptFromCui(self,cui)
                 #this is currently mostly a dummy funcition until we have UMLS to Biolink predicate mapping
                 edgeJson = self.retrieveRelationshipFromRui(self,relation)
                 edgeJson['source_id']=sourceId
                 edges.append(edgeJson)
+                if(len(nodeJson)==1):
+                    nodeJson=nodeJson[0]
+                else:
+                    print("length: "+str(len(nodeJson)))
+                    for n in nodeJson:
+                        print(str(n))
 
                 node ={}
                 if 'definitions' in nodeJson:
                     node['description']=nodeJson['definitions']
+
                 node['id']="UMLS:"+nodeJson['cui']
                 node['name']=nodeJson['name']
                 #mapping needs to be done from Semantic Types Ontology to Biolink.  For now, let's just cheat
                 node['type']=["named_thing"]
                 #print(node)
                 nodes.append(node)
+                nodeBindings.append(
+                    {
+                        "kg_id":node['id'],
+                        "qg_id":freeNodeId
+                    }
+                )
+                nodeBindings.append(
+                    {
+                        "kg_id":lockedNode['curie'],
+                        "qg_id":lockedNode['id']
+                    }
+                )
+                edgeBinding={
+                    "kg_id":edgeJson['id'],
+                    "qg_id":qEdgeId
+                }
+                results.append(
+                    {
+                        "node_bindings":nodeBindings,
+                        "edge_bindings":[edgeBinding]
+                    }
+                )
             knowledge_graph={'edges':edges,'nodes':nodes}
-            answers = self.generateResults(self,knowledge_graph)
-            message['results']=answers
+            #answers = self.generateResults(self,knowledge_graph)
+            message['results']=results
             message['knowledge_graph']=knowledge_graph    
             #print ("nodes "+str(len(nodes))+"\nedges "+str(len(edges))+"\n")
             return message
@@ -267,7 +314,7 @@ class Relations(Resource):
             return edge
 
         def retrieveConceptFromCui(self,cui):
-            url = 'https://blackboard.ncats.io/ks/umls/api/concepts/cui/'+cui
+            url = 'https://knowledge.ncats.io/ks/umls/concepts/'+cui
             with closing(requests.get(url,stream=False)) as response:
                 response.encoding='utf-8'
                 jsonResult = response.json()
@@ -276,10 +323,10 @@ class Relations(Resource):
 
 
         def post(self):
-            question_graph = request.get_json(force = True)
-            nodeList = question_graph['nodes']
+            query_graph = request.get_json(force = True)
+            nodeList = query_graph['nodes']
             curieToIdMap={}
-            message = {'question_graph':question_graph}
+            message = {'query_graph':query_graph}
             for node in nodeList:
                 if('curie' in node):
                     curie=node['curie']
