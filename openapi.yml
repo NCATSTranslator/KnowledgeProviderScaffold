@@ -6,7 +6,7 @@ info:
   termsOfService: https://opensource.org/licenses/MIT
   contact:
     name: Mark Williams
-    x-role: developer
+    x-role: responsible developer
     email: mark.williams5@nih.gov
 servers:
   - url: 'http://transltr.io:7072'
