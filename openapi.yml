@@ -1,0 +1,22 @@
+openapi: '3.0.0'
+info:
+  version: '3.0'
+  title: NCATS KP Scaffold
+  description: 'a work in progress KP example'
+  termsOfService: https://opensource.org/licenses/MIT
+  contact:
+    name: Mark Williams
+    x-role: developer
+    email: mark.williams5@nih.gov
+servers:
+  - url: 'http://transltr.io:7072'
+    description: 'Production server'
+tags:
+  - name: translator
+paths:
+  /query:
+    post:
+      summary: 'POST a ReasonerStdAPI formatted query to the service.  Note, the service can only accept a limited set of query types currently.'
+      responses:
+        '200':
+          description: 'A query response object'
