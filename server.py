@@ -5,6 +5,7 @@ from contextlib import closing
 import urllib.parse
 import requests
 import time
+import certifi
 
 app = Flask(__name__)
 api = Api(app)
@@ -32,14 +33,19 @@ class Query(Resource):
         with closing(requests.get(url, stream=False)) as response:
            response.encoding='utf-8'
            results = response.text
-        jsonResults =  json.loads(results)
+        try:
+            jsonResults =  json.loads(results)
+        except:
+            print(str(results))
+            exit()
         connectedNodes = []
         for result in jsonResults:
             label = result['label']
-            with closing(requests.post(getCurieUrl,data=label.encode('utf-8'))) as response:
+            #TODO reenable ssl verification
+            with closing(requests.post(getCurieUrl,verify=False,data=label.encode('utf-8'))) as response:
                 response.encoding='utf-8'
-                results = json.loads(response.text)
                 try:
+                    results = json.loads(response.text)
                     connectedNodes.append(results[0])
                 except:
                     #some of these terms won't come back with an identifier.  We can just throw those out.
@@ -159,6 +165,7 @@ class Query(Resource):
         query = request.get_json(force = True)
         nodeList = query['nodes']
         nodeCount = len(nodeList)
+        print(str(nodeCount))
         #TODO do this in a more robust (read: less terrible) way
         if(nodeCount==3):
             result = self.ngram(query)
@@ -197,7 +204,7 @@ class Relations(Resource):
             edges = []
             nodes = []
             results = []
-            LIMIT = 50
+            LIMIT = 100
             count = 0
             #TODO improve this; I'm making a lot of assumptions here and not validating
             query=message['query_graph']
